@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP Financeiro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c12;
+    --surface:   #12151f;
+    --card:      #1a1f2c;
+    --border:    #252b3a;
+    --accent:    #00e5a0;
+    --accent2:   #ff4d4d;
+    --accent3:   #4d9fff;
+    --accent4:   #f5a623;
+    --text:      #f0f4fc;
+    --muted:     #8a94a8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    height: 72px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { font-size: 19px; font-weight: 700; letter-spacing: 1.5px; color: white; }
+  .logo span { color: var(--accent); }
+  .header-subtitle { font-size: 14.5px; color: var(--muted); font-weight: 500; }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  aside {
+    width: 270px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 16px;
+    flex-shrink: 0;
+  }
+
+  .menu-section { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1.2px; padding: 0 18px; margin: 20px 0 8px; }
+
+  .menu-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 18px; border-radius: 12px; color: var(--muted);
+    font-size: 14px; margin-bottom: 4px; transition: all 0.2s; cursor: pointer;
+  }
+  .menu-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .menu-item.active { background: rgba(0,229,160,0.15); color: var(--accent); font-weight: 600; }
+  .menu-item .icon { width: 18px; text-align: center; }
+
+  main { flex: 1; padding: 36px; overflow-y: auto; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;
+  }
+  .page-title { font-size: 26px; font-weight: 700; }
+  .page-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+  /* KPIs */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 28px;
+  }
+  .kpi-label { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+  .kpi-value { font-size: 28px; font-weight: 700; margin-top: 10px; font-family: 'DM Mono', monospace; }
+
+  /* Table */
+  .table-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  }
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+  }
+  .table-header-title { font-weight: 600; font-size: 15px; }
+
+  .filter-row {
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px 24px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);
+  }
+  .filter-row input, .filter-row select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Sora', sans-serif;
+  }
+  .filter-row input { flex: 1; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; padding: 14px 20px; font-size: 11.5px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  td { padding: 15px 20px; border-bottom: 1px solid rgba(37,43,58,0.6); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.025); }
+
+  .tag {
+    display: inline-block; padding: 4px 10px; border-radius: 6px;
+    font-size: 11.5px; font-weight: 600; font-family: 'DM Mono', monospace;
+  }
+  .tag-pendente { background: rgba(245,166,35,0.15); color: var(--accent4); }
+  .tag-pago     { background: rgba(0,229,160,0.15); color: var(--accent); }
+  .tag-vencido  { background: rgba(255,77,77,0.2); color: var(--accent2); }
+  .tag-cancelado{ background: rgba(138,148,168,0.15); color: var(--muted); }
+  .tag-pagar    { background: rgba(255,77,77,0.15); color: var(--accent2); }
+  .tag-receber  { background: rgba(77,159,255,0.15); color: var(--accent3); }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 10px; font-size: 13.5px;
+    font-family: 'Sora', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: #0a0c12; }
+  .btn-primary:hover { background: #00ffb3; transform: translateY(-1px); }
+  .btn-sm { padding: 6px 14px; font-size: 12.5px; border-radius: 8px; }
+  .btn-danger { background: rgba(255,77,77,0.15); color: var(--accent2); border: 1px solid rgba(255,77,77,0.3); }
+  .btn-danger:hover { background: rgba(255,77,77,0.3); }
+  .btn-quitar { background: rgba(0,229,160,0.15); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .btn-quitar:hover { background: rgba(0,229,160,0.3); }
+  .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--card); }
+
+  .actions-cell { display: flex; gap: 8px; align-items: center; }
+
+  /* Extrato */
+  .extrato-summary {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px;
+  }
+  .extrato-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 24px; text-align: center;
+  }
+  .extrato-card .label { font-size: 11px; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; }
+  .extrato-card .value { font-size: 22px; font-weight: 700; margin-top: 8px; font-family: 'DM Mono', monospace; }
+
+  /* Fluxo */
+  .fluxo-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .fluxo-bar-bg { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+  .fluxo-bar { height: 8px; border-radius: 4px; transition: width 0.4s ease; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 36px; width: 560px; max-width: 95vw;
+    transform: translateY(20px); transition: transform 0.2s;
+  }
+  .overlay.open .modal { transform: translateY(0); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 12px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: 14px; font-family: 'Sora', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 72px; }
+
+  /* Modal Quitar */
+  .quitar-info { background: var(--surface); border-radius: 12px; padding: 18px; margin-bottom: 22px; }
+  .quitar-info .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+  .quitar-info .row .k { color: var(--muted); }
+  .quitar-info .row .v { font-weight: 600; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 32px; right: 32px; padding: 14px 22px;
+    border-radius: 12px; font-size: 14px; font-weight: 600;
+    transform: translateY(80px); opacity: 0; transition: all 0.3s;
+    z-index: 999; pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; }
+
+  /* Saldo positivo/negativo */
+  .positive { color: var(--accent) !important; }
+  .negative { color: var(--accent2) !important; }
+  .neutral  { color: var(--accent3) !important; }
+
+  .dot-status {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    aside { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ERP <span>FINANCEIRO</span></div>
+  <div class="header-subtitle">Contas a Pagar &bull; Contas a Receber &bull; Extrato &bull; Fluxo de Caixa</div>
+  <div style="color:var(--muted);font-size:13px;" id="data-atual"></div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="menu-section">Principal</div>
+    <div class="menu-item active" onclick="setPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+
+    <div class="menu-section">Gestão</div>
+    <div class="menu-item" onclick="setPage('pagar')">
+      <span class="icon">📤</span> Contas a Pagar
+    </div>
+    <div class="menu-item" onclick="setPage('receber')">
+      <span class="icon">📥</span> Contas a Receber
+    </div>
+    <div class="menu-item" onclick="setPage('extrato')">
+      <span class="icon">📋</span> Extrato
+    </div>
+
+    <div class="menu-section">Relatórios</div>
+    <div class="menu-item" onclick="setPage('fluxo')">
+      <span class="icon">📈</span> Fluxo de Caixa
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- ========== DASHBOARD ========== -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Visão Geral Financeira</div>
+          <div class="page-sub">Saúde financeira e controle de prazos</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('receber')">+ Novo Lançamento</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-label">A Receber</div>
+          <div class="kpi-value positive" id="kpi-receber">R$ 0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;" id="kpi-receber-qtd">0 títulos</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">A Pagar</div>
+          <div class="kpi-value negative" id="kpi-pagar">R$ 0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;" id="kpi-pagar-qtd">0 títulos</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Saldo Previsto</div>
+          <div class="kpi-value" id="kpi-saldo">R$ 0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">Receber − Pagar</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Títulos Vencidos</div>
+          <div class="kpi-value negative" id="kpi-vencidos">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;">aguardando quitação</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <span class="table-header-title">Últimos Lançamentos</span>
+          <span style="font-size:13px;color:var(--muted);">5 mais recentes</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Descrição</th><th>Tipo</th><th>Parceiro</th><th>Vencimento</th><th>Valor</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbody-recentes"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== CONTAS A PAGAR ========== -->
+    <div id="page-pagar" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Contas a Pagar</div>
+          <div class="page-sub">Obrigações financeiras com fornecedores</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('pagar')">+ Nova Conta</button>
+      </div>
+      <div class="table-wrap">
+        <div class="filter-row">
+          <input type="text" id="filtro-pagar" placeholder="Buscar por descrição ou fornecedor…" oninput="renderPagar()">
+          <select id="status-pagar" onchange="renderPagar()">
+            <option value="">Todos os status</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Pago">Pago</option>
+            <option value="Vencido">Vencido</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Descrição</th><th>Fornecedor</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="tbody-pagar"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== CONTAS A RECEBER ========== -->
+    <div id="page-receber" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Contas a Receber</div>
+          <div class="page-sub">Entradas esperadas de clientes</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('receber')">+ Nova Conta</button>
+      </div>
+      <div class="table-wrap">
+        <div class="filter-row">
+          <input type="text" id="filtro-receber" placeholder="Buscar por descrição ou cliente…" oninput="renderReceber()">
+          <select id="status-receber" onchange="renderReceber()">
+            <option value="">Todos os status</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Pago">Pago</option>
+            <option value="Vencido">Vencido</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Descrição</th><th>Cliente</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="tbody-receber"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== EXTRATO ========== -->
+    <div id="page-extrato" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Extrato Financeiro</div>
+          <div class="page-sub">Histórico consolidado de entradas e saídas</div>
+        </div>
+      </div>
+
+      <div class="extrato-summary">
+        <div class="extrato-card">
+          <div class="label">Total Entradas</div>
+          <div class="value positive" id="ext-entradas">R$ 0</div>
+        </div>
+        <div class="extrato-card">
+          <div class="label">Total Saídas</div>
+          <div class="value negative" id="ext-saidas">R$ 0</div>
+        </div>
+        <div class="extrato-card">
+          <div class="label">Saldo Período</div>
+          <div class="value" id="ext-saldo">R$ 0</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="filter-row">
+          <input type="text" id="filtro-extrato" placeholder="Buscar…" oninput="renderExtrato()">
+          <select id="tipo-extrato" onchange="renderExtrato()">
+            <option value="">Entradas e Saídas</option>
+            <option value="receber">Somente Entradas</option>
+            <option value="pagar">Somente Saídas</option>
+          </select>
+          <select id="status-extrato" onchange="renderExtrato()">
+            <option value="">Todos os status</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Pago">Pago / Recebido</option>
+            <option value="Vencido">Vencido</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Data Venc.</th><th>Descrição</th><th>Parceiro</th><th>Tipo</th><th>Valor</th><th>Status</th><th>Ação</th>
+          </tr></thead>
+          <tbody id="tbody-extrato"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========== FLUXO DE CAIXA ========== -->
+    <div id="page-fluxo" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Fluxo de Caixa</div>
+          <div class="page-sub">Análise mensal de entradas e saídas</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Mês / Ano</th><th>Entradas (R$)</th><th>Saídas (R$)</th><th>Saldo (R$)</th><th>Representação</th>
+          </tr></thead>
+          <tbody id="tbody-fluxo"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ========== MODAL NOVO LANÇAMENTO ========== -->
+<div class="overlay" id="overlay-novo">
+  <div class="modal">
+    <h2 id="modal-title" style="margin-bottom:24px;font-size:20px;">Novo Lançamento</h2>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Descrição *</label>
+        <input id="f-desc" type="text" placeholder="Ex: Nota Fiscal 001 — Compra de mercadorias">
+      </div>
+      <div class="form-group">
+        <label id="f-part-label">Parceiro *</label>
+        <input id="f-part" type="text" placeholder="Nome do parceiro">
+      </div>
+      <div class="form-group">
+        <label>Vencimento *</label>
+        <input id="f-venc" type="date">
+      </div>
+      <div class="form-group">
+        <label>Valor (R$) *</label>
+        <input id="f-valor" type="number" step="0.01" min="0.01" placeholder="0,00">
+      </div>
+      <div class="form-group">
+        <label>Status Inicial</label>
+        <select id="f-status">
+          <option value="Pendente">Pendente</option>
+          <option value="Pago">Já Pago / Recebido</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Observação (opcional)</label>
+        <textarea id="f-obs" placeholder="Informações adicionais…"></textarea>
+      </div>
+    </div>
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-novo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvar()">Salvar Lançamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL QUITAR / LIQUIDAR ========== -->
+<div class="overlay" id="overlay-quitar">
+  <div class="modal" style="width:440px;">
+    <h2 id="quitar-title" style="margin-bottom:18px;font-size:20px;">Liquidar Título</h2>
+    <div class="quitar-info" id="quitar-info"></div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Data de Liquidação</label>
+        <input id="q-data" type="date">
+      </div>
+      <div class="form-group full">
+        <label>Observação (opcional)</label>
+        <input id="q-obs" type="text" placeholder="Ex: Pago via PIX">
+      </div>
+    </div>
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-quitar')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-quitar" onclick="confirmarQuitar()">Confirmar Liquidação</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ==================== CONFIG ====================
+const API_URL = 'http://localhost:3001/api/lancamentos';
+let lancamentos = [];
+let modalTipo = 'pagar';
+let quitarId = null;
+
+// ==================== UTILS ====================
+const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
+const today = () => new Date().toISOString().slice(0,10);
+
+function statusClass(s) {
+  if (s === 'Pago') return 'tag-pago';
+  if (s === 'Vencido') return 'tag-vencido';
+  if (s === 'Cancelado') return 'tag-cancelado';
+  return 'tag-pendente';
+}
+
+// Verifica e atualiza status de vencidos localmente
+function computeStatus(l) {
+  if (l.status === 'Pago' || l.status === 'Cancelado') return l.status;
+  if (l.venc < today()) return 'Vencido';
+  return l.status;
+}
+
+// ==================== API ====================
+async function loadLancamentos() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    lancamentos = data.map(l => ({ ...l, status: computeStatus(l) }));
+    refreshAll();
+  } catch(e) {
+    toast('Erro ao conectar na API. Verifique se o servidor está rodando.', true);
+    console.error(e);
+  }
+}
+
+async function salvar() {
+  const desc  = document.getElementById('f-desc').value.trim();
+  const part  = document.getElementById('f-part').value.trim();
+  const valor = parseFloat(document.getElementById('f-valor').value);
+  const venc  = document.getElementById('f-venc').value;
+  const status = document.getElementById('f-status').value;
+
+  if (!desc || !part || !valor || !venc) {
+    toast('Preencha todos os campos obrigatórios!', true); return;
+  }
+  if (valor <= 0) {
+    toast('Valor deve ser maior que zero!', true); return;
+  }
+
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: modalTipo, desc, part, valor, venc, status })
+    });
+    if (!r.ok) throw new Error();
+    closeModal('overlay-novo');
+    toast('Lançamento salvo com sucesso! ✓');
+    loadLancamentos();
+  } catch {
+    toast('Erro ao salvar lançamento.', true);
+  }
+}
+
+function abrirQuitar(id) {
+  const l = lancamentos.find(x => x.id === id);
+  if (!l) return;
+  quitarId = id;
+  document.getElementById('quitar-title').textContent =
+    l.tipo === 'pagar' ? 'Liquidar Título — Conta a Pagar' : 'Liquidar Título — Conta a Receber';
+  document.getElementById('quitar-info').innerHTML = `
+    <div class="row"><span class="k">Descrição</span><span class="v">${l.desc}</span></div>
+    <div class="row"><span class="k">${l.tipo === 'pagar' ? 'Fornecedor' : 'Cliente'}</span><span class="v">${l.part}</span></div>
+    <div class="row"><span class="k">Vencimento</span><span class="v">${fmtDate(l.venc)}</span></div>
+    <div class="row"><span class="k">Valor</span><span class="v" style="color:var(--accent);font-size:18px;">${fmt(l.valor)}</span></div>
+  `;
+  document.getElementById('q-data').value = today();
+  document.getElementById('q-obs').value = '';
+  document.getElementById('overlay-quitar').classList.add('open');
+}
+
+async function confirmarQuitar() {
+  if (!quitarId) return;
+  try {
+    const r = await fetch(`${API_URL}/${quitarId}/quitar`, { method: 'PATCH' });
+    if (!r.ok) throw new Error();
+    closeModal('overlay-quitar');
+    toast('Título liquidado com sucesso! ✓');
+    loadLancamentos();
+  } catch {
+    toast('Erro ao quitar lançamento.', true);
+  }
+}
+
+async function excluir(id) {
+  if (!confirm('Confirma a exclusão deste lançamento?')) return;
+  try {
+    const r = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error();
+    toast('Lançamento excluído.');
+    loadLancamentos();
+  } catch {
+    toast('Erro ao excluir.', true);
+  }
+}
+
+// ==================== UI ====================
+function setPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  const item = document.querySelector(`.menu-item[onclick="setPage('${page}')"]`);
+  if (item) item.classList.add('active');
+  if (page === 'extrato') renderExtrato();
+  if (page === 'fluxo') renderFluxo();
+}
+
+function openModal(tipo) {
+  modalTipo = tipo;
+  document.getElementById('modal-title').textContent =
+    tipo === 'pagar' ? 'Nova Conta a Pagar' : 'Nova Conta a Receber';
+  document.getElementById('f-part-label').textContent = tipo === 'pagar' ? 'Fornecedor *' : 'Cliente *';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-part').value = '';
+  document.getElementById('f-valor').value = '';
+  document.getElementById('f-obs').value = '';
+  document.getElementById('f-status').value = 'Pendente';
+  document.getElementById('f-venc').value = today();
+  document.getElementById('overlay-novo').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function toast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = error ? '#ff4d4d' : 'var(--accent)';
+  t.style.color = error ? '#fff' : '#0a0c12';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Fechar modais clicando fora
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ==================== RENDER ====================
+function refreshAll() {
+  refreshDashboard();
+  renderPagar();
+  renderReceber();
+  renderExtrato();
+  renderFluxo();
+}
+
+function refreshDashboard() {
+  const pendRec = lancamentos.filter(l => l.tipo === 'receber' && l.status !== 'Pago' && l.status !== 'Cancelado');
+  const pendPag = lancamentos.filter(l => l.tipo === 'pagar'   && l.status !== 'Pago' && l.status !== 'Cancelado');
+  const vencidos = lancamentos.filter(l => l.status === 'Vencido').length;
+  const totalRec = pendRec.reduce((a,l) => a + l.valor, 0);
+  const totalPag = pendPag.reduce((a,l) => a + l.valor, 0);
+  const saldo = totalRec - totalPag;
+
+  document.getElementById('kpi-receber').textContent = fmt(totalRec);
+  document.getElementById('kpi-receber-qtd').textContent = `${pendRec.length} título(s)`;
+  document.getElementById('kpi-pagar').textContent = fmt(totalPag);
+  document.getElementById('kpi-pagar-qtd').textContent = `${pendPag.length} título(s)`;
+  const kpiSaldo = document.getElementById('kpi-saldo');
+  kpiSaldo.textContent = fmt(saldo);
+  kpiSaldo.className = 'kpi-value ' + (saldo >= 0 ? 'positive' : 'negative');
+  document.getElementById('kpi-vencidos').textContent = vencidos;
+
+  const tbody = document.getElementById('tbody-recentes');
+  const recentes = [...lancamentos].sort((a,b) => b.id - a.id).slice(0, 5);
+  tbody.innerHTML = recentes.length ? recentes.map(l => `
+    <tr>
+      <td>${l.desc}</td>
+      <td><span class="tag ${l.tipo === 'receber' ? 'tag-receber' : 'tag-pagar'}">${l.tipo === 'receber' ? 'RECEBER' : 'PAGAR'}</span></td>
+      <td style="color:var(--muted)">${l.part}</td>
+      <td style="font-family:'DM Mono',monospace">${fmtDate(l.venc)}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${fmt(l.valor)}</td>
+      <td><span class="tag ${statusClass(l.status)}">${l.status}</span></td>
+    </tr>
+  `).join('') : '<tr><td colspan="6" class="empty"><div class="icon">📭</div><p>Nenhum lançamento encontrado</p></td></tr>';
+}
+
+function renderPagar() {
+  const filtro  = (document.getElementById('filtro-pagar')?.value || '').toLowerCase();
+  const statusF = document.getElementById('status-pagar')?.value || '';
+  let data = lancamentos.filter(l => l.tipo === 'pagar');
+  if (filtro) data = data.filter(l => l.desc.toLowerCase().includes(filtro) || l.part.toLowerCase().includes(filtro));
+  if (statusF) data = data.filter(l => l.status === statusF);
+
+  const tbody = document.getElementById('tbody-pagar');
+  tbody.innerHTML = data.length ? data.map(l => `
+    <tr>
+      <td>${l.desc}</td>
+      <td style="color:var(--muted)">${l.part}</td>
+      <td style="font-family:'DM Mono',monospace">${fmtDate(l.venc)}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${fmt(l.valor)}</td>
+      <td><span class="tag ${statusClass(l.status)}">${l.status}</span></td>
+      <td>
+        <div class="actions-cell">
+          ${l.status !== 'Pago' && l.status !== 'Cancelado' ? `<button class="btn btn-sm btn-quitar" onclick="abrirQuitar(${l.id})">Quitar</button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="excluir(${l.id})">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="6"><div class="empty"><div class="icon">📭</div><p>Nenhuma conta a pagar</p></div></td></tr>';
+}
+
+function renderReceber() {
+  const filtro  = (document.getElementById('filtro-receber')?.value || '').toLowerCase();
+  const statusF = document.getElementById('status-receber')?.value || '';
+  let data = lancamentos.filter(l => l.tipo === 'receber');
+  if (filtro) data = data.filter(l => l.desc.toLowerCase().includes(filtro) || l.part.toLowerCase().includes(filtro));
+  if (statusF) data = data.filter(l => l.status === statusF);
+
+  const tbody = document.getElementById('tbody-receber');
+  tbody.innerHTML = data.length ? data.map(l => `
+    <tr>
+      <td>${l.desc}</td>
+      <td style="color:var(--muted)">${l.part}</td>
+      <td style="font-family:'DM Mono',monospace">${fmtDate(l.venc)}</td>
+      <td style="font-family:'DM Mono',monospace;font-weight:600">${fmt(l.valor)}</td>
+      <td><span class="tag ${statusClass(l.status)}">${l.status}</span></td>
+      <td>
+        <div class="actions-cell">
+          ${l.status !== 'Pago' && l.status !== 'Cancelado' ? `<button class="btn btn-sm btn-quitar" onclick="abrirQuitar(${l.id})">Receber</button>` : ''}
+          <button class="btn btn-sm btn-danger" onclick="excluir(${l.id})">Excluir</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="6"><div class="empty"><div class="icon">📭</div><p>Nenhuma conta a receber</p></div></td></tr>';
+}
+
+function renderExtrato() {
+  const filtro  = (document.getElementById('filtro-extrato')?.value || '').toLowerCase();
+  const tipoF   = document.getElementById('tipo-extrato')?.value || '';
+  const statusF = document.getElementById('status-extrato')?.value || '';
+
+  let data = [...lancamentos].sort((a,b) => b.venc.localeCompare(a.venc));
+  if (filtro)  data = data.filter(l => l.desc.toLowerCase().includes(filtro) || l.part.toLowerCase().includes(filtro));
+  if (tipoF)   data = data.filter(l => l.tipo === tipoF);
+  if (statusF) data = data.filter(l => l.status === statusF);
+
+  const entradas = data.filter(l => l.tipo === 'receber').reduce((a,l) => a + l.valor, 0);
+  const saidas   = data.filter(l => l.tipo === 'pagar').reduce((a,l) => a + l.valor, 0);
+  const saldo    = entradas - saidas;
+
+  document.getElementById('ext-entradas').textContent = fmt(entradas);
+  document.getElementById('ext-saidas').textContent   = fmt(saidas);
+  const extSaldo = document.getElementById('ext-saldo');
+  extSaldo.textContent = fmt(saldo);
+  extSaldo.className = 'value ' + (saldo >= 0 ? 'positive' : 'negative');
+
+  const tbody = document.getElementById('tbody-extrato');
+  tbody.innerHTML = data.length ? data.map(l => `
+    <tr>
+      <td style="font-family:'DM Mono',monospace">${fmtDate(l.venc)}</td>
+      <td>${l.desc}</td>
+      <td style="color:var(--muted)">${l.part}</td>
+      <td><span class="tag ${l.tipo === 'receber' ? 'tag-receber' : 'tag-pagar'}">${l.tipo === 'receber' ? '↑ ENTRADA' : '↓ SAÍDA'}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;${l.tipo==='receber'?'color:var(--accent)':'color:var(--accent2)'}">
+        ${l.tipo === 'receber' ? '+' : '-'} ${fmt(l.valor)}
+      </td>
+      <td><span class="tag ${statusClass(l.status)}">${l.status}</span></td>
+      <td>
+        ${l.status !== 'Pago' && l.status !== 'Cancelado'
+          ? `<button class="btn btn-sm btn-quitar" onclick="abrirQuitar(${l.id})">${l.tipo==='pagar'?'Quitar':'Receber'}</button>`
+          : '<span style="color:var(--muted);font-size:12px;">Liquidado</span>'}
+      </td>
+    </tr>
+  `).join('') : '<tr><td colspan="7"><div class="empty"><div class="icon">📋</div><p>Nenhum lançamento encontrado</p></div></td></tr>';
+}
+
+function renderFluxo() {
+  // Agrupa por Mês/Ano
+  const meses = {};
+  lancamentos.forEach(l => {
+    const mes = l.venc.slice(0,7); // YYYY-MM
+    if (!meses[mes]) meses[mes] = { entrada: 0, saida: 0 };
+    if (l.tipo === 'receber') meses[mes].entrada += l.valor;
+    else meses[mes].saida += l.valor;
+  });
+
+  const keys = Object.keys(meses).sort().reverse();
+  const maxVal = Math.max(...keys.map(k => Math.max(meses[k].entrada, meses[k].saida)), 1);
+
+  const tbody = document.getElementById('tbody-fluxo');
+  tbody.innerHTML = keys.length ? keys.map(k => {
+    const { entrada, saida } = meses[k];
+    const saldo = entrada - saida;
+    const [ano, mes] = k.split('-');
+    const nomeMes = new Date(+ano, +mes - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    const pctEnt = (entrada / maxVal * 100).toFixed(1);
+    const pctSai = (saida   / maxVal * 100).toFixed(1);
+    return `
+      <tr>
+        <td style="font-weight:600;text-transform:capitalize">${nomeMes}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--accent)">${fmt(entrada)}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--accent2)">${fmt(saida)}</td>
+        <td style="font-family:'DM Mono',monospace;font-weight:700;${saldo>=0?'color:var(--accent)':'color:var(--accent2)'}">${fmt(saldo)}</td>
+        <td style="min-width:180px;">
+          <div style="margin-bottom:4px;">
+            <div class="fluxo-bar-wrap">
+              <span style="font-size:10px;color:var(--accent);width:14px;">↑</span>
+              <div class="fluxo-bar-bg"><div class="fluxo-bar" style="width:${pctEnt}%;background:var(--accent)"></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="fluxo-bar-wrap">
+              <span style="font-size:10px;color:var(--accent2);width:14px;">↓</span>
+              <div class="fluxo-bar-bg"><div class="fluxo-bar" style="width:${pctSai}%;background:var(--accent2)"></div></div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('') : '<tr><td colspan="5"><div class="empty"><div class="icon">📈</div><p>Nenhum dado disponível</p></div></td></tr>';
+}
+
+// ==================== INIT ====================
+document.getElementById('data-atual').textContent =
+  new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+loadLancamentos();
+</script>
+</body>
+</html>
