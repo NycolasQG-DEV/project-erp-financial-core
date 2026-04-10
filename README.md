@@ -1,5 +1,6 @@
 # ERP Modular — Módulo 05: Financeiro
 > Grupo: Nycolas Gimenez, Tiago Gregório, Nicolas Medeiros e Vinicius Silva
+> Squad: Hortobots
 > Controle de Contas a Pagar, Contas a Receber, Extrato e Fluxo de Caixa.
 
 ## Stack
