@@ -239,5 +239,5 @@ npm run dev
 # http://localhost:3001
 ```
 
-## V1.6 - Senai && Hortobots
+## V1.7 - Senai && Hortobots
 
